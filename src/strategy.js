@@ -25,6 +25,7 @@ function Strategy(options, verify) {
         tokenURL: realmURL + '/protocol/openid-connect/token',
         userInfoURL: realmURL + '/protocol/openid-connect/userinfo',
     });
+    this.options.passReqToCallback = false;
 
     this._base = Object.getPrototypeOf(Strategy.prototype);
     this._base.constructor.call(this, this.options, verify);
@@ -35,7 +36,11 @@ function Strategy(options, verify) {
 // Keycloak is an OAuth2 provider.
 util.inherits(Strategy, OAuth2Strategy);
 
-// FIXME: Add documentation.
+/**
+ * prototype method to resolve the user profile
+ * @param {string} accessToken the access token acuired and able to us for getting the profile
+ * @param {function(err, profile)} done the callback method to call with the profile (or error)
+ */
 Strategy.prototype.userProfile = function (accessToken, done) {
     const options = {
         url: this.options.userInfoURL,
@@ -50,9 +55,11 @@ Strategy.prototype.userProfile = function (accessToken, done) {
             done(err);
             return;
         }
-
         try {
-            done(null, JSON.parse(body));
+            
+            let profile = JSON.parse(body);
+            profile.id = profile.sub
+            done(null, profile);
         } catch (e) {
             done(e);
         }
